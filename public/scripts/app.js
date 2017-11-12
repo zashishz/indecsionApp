@@ -11,27 +11,65 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var IndecisionApp = function (_React$Component) {
     _inherits(IndecisionApp, _React$Component);
 
-    function IndecisionApp() {
+    function IndecisionApp(props) {
         _classCallCheck(this, IndecisionApp);
 
-        return _possibleConstructorReturn(this, (IndecisionApp.__proto__ || Object.getPrototypeOf(IndecisionApp)).apply(this, arguments));
+        var _this = _possibleConstructorReturn(this, (IndecisionApp.__proto__ || Object.getPrototypeOf(IndecisionApp)).call(this, props));
+
+        _this.pickOptionHandler = _this.pickOptionHandler.bind(_this);
+        _this.deleteOptionHandler = _this.deleteOptionHandler.bind(_this);
+        _this.addOptionHandler = _this.addOptionHandler.bind(_this);
+
+        _this.state = {
+            options: []
+        };
+        return _this;
     }
 
     _createClass(IndecisionApp, [{
+        key: "addOptionHandler",
+        value: function addOptionHandler(option) {
+
+            if (!option.trim()) {
+                return "please enter Task Name";
+            } else if (this.state.options.indexOf(option) > -1) {
+                return "Task already Exists!";
+            }
+            this.setState(function (prevState) {
+                return {
+                    options: prevState.options.concat(option)
+                };
+            });
+        }
+    }, {
+        key: "pickOptionHandler",
+        value: function pickOptionHandler() {
+            var randOption = Math.floor(Math.random() * this.state.options.length);
+            alert(this.state.options[randOption]);
+        }
+    }, {
+        key: "deleteOptionHandler",
+        value: function deleteOptionHandler() {
+            this.setState(function () {
+                return {
+                    options: []
+                };
+            });
+        }
+    }, {
         key: "render",
         value: function render() {
 
             var title = "Indecision App";
             var subtitle = "Put Your Life in Hands of Computer !";
-            var options = ['A', 'B', 'C'];
 
             return React.createElement(
                 "div",
                 null,
                 React.createElement(Header, { title: title, subtitle: subtitle }),
-                React.createElement(Action, null),
-                React.createElement(Options, null),
-                React.createElement(AddOption, null)
+                React.createElement(Action, { pickOption: this.pickOptionHandler, hasOptions: this.state.options.length > 0 }),
+                React.createElement(Options, { options: this.state.options, deleteOptions: this.deleteOptionHandler }),
+                React.createElement(AddOption, { addOption: this.addOptionHandler })
             );
         }
     }]);
@@ -88,7 +126,7 @@ var Action = function (_React$Component3) {
                 null,
                 React.createElement(
                     "button",
-                    null,
+                    { onClick: this.props.pickOption, disabled: !this.props.hasOptions },
                     "What Should i Do..?"
                 )
             );
@@ -111,10 +149,20 @@ var Options = function (_React$Component4) {
         key: "render",
         value: function render() {
             return React.createElement(
-                "ol",
+                "div",
                 null,
-                React.createElement(Option, null),
-                React.createElement(Option, null)
+                React.createElement(
+                    "button",
+                    { onClick: this.props.deleteOptions },
+                    "Delete Options"
+                ),
+                React.createElement(
+                    "ol",
+                    null,
+                    this.props.options.map(function (option) {
+                        return React.createElement(Option, { key: option, option: option });
+                    })
+                )
             );
         }
     }]);
@@ -137,7 +185,7 @@ var Option = function (_React$Component5) {
             return React.createElement(
                 "li",
                 null,
-                "This is an Option."
+                this.props.option
             );
         }
     }]);
@@ -148,19 +196,53 @@ var Option = function (_React$Component5) {
 var AddOption = function (_React$Component6) {
     _inherits(AddOption, _React$Component6);
 
-    function AddOption() {
+    function AddOption(props) {
         _classCallCheck(this, AddOption);
 
-        return _possibleConstructorReturn(this, (AddOption.__proto__ || Object.getPrototypeOf(AddOption)).apply(this, arguments));
+        var _this6 = _possibleConstructorReturn(this, (AddOption.__proto__ || Object.getPrototypeOf(AddOption)).call(this, props));
+
+        _this6.formHandler = _this6.formHandler.bind(_this6);
+        _this6.state = {
+            errorMessage: undefined
+        };
+        return _this6;
     }
 
     _createClass(AddOption, [{
+        key: "formHandler",
+        value: function formHandler(e) {
+            e.preventDefault();
+
+            var task = e.target.elements.task.value.trim();
+
+            var errorMessage = this.props.addOption(task);
+            e.target.elements.task.value = "";
+
+            this.setState(function () {
+                return { errorMessage: errorMessage };
+            });
+        }
+    }, {
         key: "render",
         value: function render() {
             return React.createElement(
-                "button",
+                "div",
                 null,
-                "Add Option"
+                this.state.errorMessage && React.createElement(
+                    "p",
+                    null,
+                    this.state.errorMessage
+                ),
+                React.createElement(
+                    "form",
+                    { onSubmit: this.formHandler },
+                    React.createElement("input", { type: "text", name: "task" }),
+                    React.createElement(
+                        "button",
+                        null,
+                        "Add Option"
+                    )
+                )
             );
         }
     }]);
