@@ -5,10 +5,11 @@ class IndecisionApp extends React.Component {
 
         this.pickOptionHandler = this.pickOptionHandler.bind(this);
         this.deleteOptionHandler = this.deleteOptionHandler.bind(this);
+        this.deleteOptionsHandler = this.deleteOptionsHandler.bind(this);
         this.addOptionHandler = this.addOptionHandler.bind(this);
 
         this.state = {
-            options: []
+            options: props.options
         }
     }
 
@@ -19,11 +20,7 @@ class IndecisionApp extends React.Component {
         } else if(this.state.options.indexOf(option) > -1) {
             return "Task already Exists!";
         }
-        this.setState((prevState) => {
-            return {
-                options: prevState.options.concat(option)
-            }
-        })
+        this.setState((prevState) => ({ options: prevState.options.concat(option) }));
     }
 
     pickOptionHandler() {
@@ -31,38 +28,68 @@ class IndecisionApp extends React.Component {
         alert(this.state.options[randOption]);
     }
 
-    deleteOptionHandler() {
-        this.setState(() => {
-            return {
-                options: []
-            }
-        })
+    deleteOptionHandler(optionToRemove) {
+        this.setState((prevState) => ({ 
+            options: prevState.options.filter((option) => option !== optionToRemove)
+        }));
+    }
+
+    deleteOptionsHandler() {
+        this.setState(() => ({ options: [] }));
+    }
+
+    componentDidMount() {
+        try {
+            let options = JSON.parse(localStorage.getItem("options"));
+            if(options) this.setState(()=> ({  options }));
+        } catch(e) {
+
+        }
+        console.log("componentDidMount");
+    }
+
+    componentDidUpdate(prevProps, prevState) {
+        if(prevState.options.length !== this.state.options.length) {
+            localStorage.setItem("options",JSON.stringify(this.state.options));
+        }
+        console.log("componentDidUpdate");
     }
 
 
     render() {
 
-        let title = "Indecision App";
         let subtitle = "Put Your Life in Hands of Computer !";
 
         return (
             <div>
-                <Header title={title} subtitle={subtitle} />
+                <Header subtitle={subtitle} />
                 <Action pickOption={this.pickOptionHandler} hasOptions={this.state.options.length > 0} />
-                <Options options={this.state.options} deleteOptions={this.deleteOptionHandler} />
+                <Options 
+                    options={this.state.options} 
+                    deleteOptions={this.deleteOptionsHandler} 
+                    deleteOption={this.deleteOptionHandler} 
+                    />
                 <AddOption addOption={this.addOptionHandler} />
             </div>
         )
     }
 }
 
+IndecisionApp.defaultProps = {
+    options : []
+}
+
 const Header = (props) => {
     return (
         <div>
             <h1>{props.title}</h1>
-            <h2>{props.subtitle}</h2>
+            { props.subtitle && <h2>{props.subtitle}</h2> }
         </div>
     );
+}
+
+Header.defaultProps = {
+    title: "Indecision App"
 }
 
 const Action = (props) => {
@@ -76,11 +103,16 @@ const Action = (props) => {
 const Options = (props) => {
     return (
         <div>
+            {props.options.length == 0 && <p>Please Add an  Option</p>}
             <button onClick={props.deleteOptions}>Delete Options</button>
             <ol>
                 {
                     props.options.map((option) => {
-                        return <Option key={option} option={option} />;
+                        return <Option 
+                            key={option} 
+                            option={option} 
+                            deleteOption={props.deleteOption}
+                            />;
                     })
                 }
             </ol>
@@ -90,7 +122,14 @@ const Options = (props) => {
 
 const Option = (props) => {
     return (
-        <li>{props.option}</li>
+        <li>
+            {props.option}
+            <button onClick={()=>{
+                props.deleteOption(props.option);
+            }}>
+            remove
+            </button>
+        </li>
     );
 }
 
@@ -112,11 +151,10 @@ class AddOption extends React.Component {
         const task = e.target.elements.task.value.trim();
         
         const errorMessage = this.props.addOption(task);
-        e.target.elements.task.value = "";
+        
+        if(!errorMessage) e.target.elements.task.value = "";
 
-        this.setState(()=>{
-            return { errorMessage }
-        })
+        this.setState(()=>({ errorMessage }))
     }
 
     render() {
